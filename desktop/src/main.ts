@@ -15,26 +15,48 @@ window.addEventListener("DOMContentLoaded", async () => {
   const statusEl = document.querySelector<HTMLDivElement>("#status")!;
   let showStatus = false;
   let initialSpine: string | undefined;
+  let spineAtlas = "/spine/chibi-stickers.atlas";  // default, overridden by config
+  let spineJson  = "/spine/chibi-stickers.json";
+  let spineSkin: string | undefined;
+  let spineCamX: number | undefined;
+  let spineCamY: number | undefined;
+  let spineZoom: number | undefined;
 
   const setStatus = (line: string) => {
     if (!showStatus) return;
     statusEl.textContent = line;
   };
 
-  // Receive config from Rust
-  await listen("anim://config", (evt) => {
-    const cfg: any = evt.payload;
-    showStatus = !!cfg?.showStatus;
-    initialSpine = cfg?.initialSpine ?? undefined;
-    statusEl.style.display = showStatus ? "block" : "none";
+  // Wait for Rust config event (with 500ms timeout fallback)
+  await new Promise<void>((resolve) => {
+    const timer = setTimeout(resolve, 500);
+    listen("anim://config", (evt) => {
+      clearTimeout(timer);
+      const cfg: any = evt.payload;
+      showStatus = !!cfg?.showStatus;
+      initialSpine = cfg?.initialSpine ?? undefined;
+      if (cfg?.spineAtlas) spineAtlas = cfg.spineAtlas;
+      if (cfg?.spineJson)  spineJson  = cfg.spineJson;
+      spineSkin = cfg?.spineSkin ?? undefined;
+      statusEl.style.display = showStatus ? "block" : "none";
+      spineCamX = (cfg?.spineCamX !== undefined && cfg.spineCamX !== 0) ? cfg.spineCamX : spineCamX;
+      spineCamY = (cfg?.spineCamY !== undefined && cfg.spineCamY !== 0) ? cfg.spineCamY : spineCamY;
+      spineZoom = (cfg?.spineZoom !== undefined && cfg.spineZoom !== 0) ? cfg.spineZoom : spineZoom;
+      console.log(`[config] skin=${spineSkin} camX=${spineCamX} camY=${spineCamY} zoom=${spineZoom}`);
+      resolve();
+    });
   });
 
   const spine = new SpineRenderer({
     canvas,
-    atlasUrl: "/spine/chibi-stickers.atlas",
-    jsonUrl: "/spine/chibi-stickers.json",
+    atlasUrl: spineAtlas,
+    jsonUrl:  spineJson,
+    skin: spineSkin ?? "spineboy",
     // fallback if config not received yet
-    initialAnimation: initialSpine ?? "emotes/just-right",
+    initialAnimation: initialSpine ?? "emotes/idle",
+    camX: spineCamX,
+    camY: spineCamY,
+    zoom: spineZoom,
   });
 
   try {

@@ -1,0 +1,81 @@
+{
+  // ─── 窗口 ────────────────────────────────────────────────────────────────────
+  // 桌面浮窗尺寸（逻辑像素）。高宽比建议与 Spine 角色比例一致。
+  "window_width": 200,
+  "window_height": 350,
+
+  // ─── Spine 资源 ──────────────────────────────────────────────────────────────
+  // Atlas 和 JSON 文件名，相对于 desktop/public/spine/ 目录。
+  // 换一套角色只需把文件放进 public/spine/，改这两行重启即可。
+  "spine_atlas": "chibi-stickers.atlas",
+  "spine_json":  "chibi-stickers.json",
+
+  // 皮肤名称。多皮肤资源（如 chibi-stickers）必须填写，否则只显示阴影。
+  // 可用皮肤名称：启动时开启 show_status:true，在终端日志中查看。
+  "spine_skin": "spineboy",
+
+  // 启动时播放的动画。省略则使用 spine_animations["idle"]。
+  "initial_spine_animation": "movement/idle-front",
+
+  // ─── 摄像机（高级，通常不需要填写）────────────────────────────────────────────
+  // 默认 auto-fit：自动将角色居中并缩放填满窗口，无需手动设置。
+  // 如需手动微调，三个参数需同时填写非零值才生效。
+  //
+  // spine_cam_x / spine_cam_y：摄像机中心点（Spine 世界坐标）
+  //   chibi-stickers 骨骼原点在脚底，角色向上延伸 682.5 单位
+  //   因此 camY ≈ 骨骼高度/2 - |y偏移| ≈ 303 时角色垂直居中
+  //
+  // spine_zoom：OrthoCamera zoom 值（越大视野越宽，角色越小）
+  //   公式：zoom ≈ 骨骼高度 / 窗口高度
+  //   例：骨骼高 682.5，窗口高 350 → zoom ≈ 1.95（满屏）
+  //   建议留 10% 余量：zoom ≈ 2.13
+  "spine_cam_x": 0,
+  "spine_cam_y": 303,
+  "spine_zoom": 0,
+
+  // ─── 动画映射 ─────────────────────────────────────────────────────────────────
+  // 将内部 action 名映射到你的 Spine 动画名。
+  // 内部 action 固定为：idle / read / write / exec / web_search / web_fetch / browser / reply / error
+  // Spine 动画名以实际资源为准（终端日志中有完整列表）。
+  "spine_animations": {
+    "idle":       "movement/idle-front",
+    "read":       "emotes/thinking",
+    "write":      "emotes/determined",
+    "exec":       "emotes/excited",
+    "web_search": "emotes/thinking",
+    "web_fetch":  "emotes/thinking",
+    "browser":    "emotes/thinking",
+    "reply":      "emotes/wave",
+    "error":      "emotes/scared"
+  },
+
+  // ─── 工具映射（高级）─────────────────────────────────────────────────────────
+  // 覆盖默认的「Gateway 工具名 → 内部 action」映射（additive，不影响默认规则）。
+  // 用于给自定义工具或插件指定动画。
+  // 例：feishu_doc → write，my_search_tool → web_search
+  "tool_action_overrides": {},
+
+  // ─── 网络连接（高级）─────────────────────────────────────────────────────────
+  // OpenClaw Gateway 端口，默认 18789，与 openclaw.json 中 gateway.port 一致。
+  "gateway_port": 18789,
+
+  // SSE 连接超时（毫秒）。Gateway 无响应时等待多久放弃本次连接。
+  "connect_timeout_ms": 3000,
+
+  // SSE 读取空闲超时（毫秒）。超过此时间无任何数据则主动重连。
+  "read_idle_timeout_ms": 60000,
+
+  // 重连最大退避时间（毫秒）。断线后每次重试间隔指数增长，上限为此值。
+  "max_backoff_ms": 30000,
+
+  // ─── 动画状态机（高级）───────────────────────────────────────────────────────
+  // 动画最小持续时间（毫秒）。防止工具调用过快导致动画频繁闪烁。
+  "min_hold_ms": 300,
+
+  // 错误状态持续时间（毫秒）。工具报错后显示 error 动画的最短时长。
+  "error_hold_ms": 1000,
+
+  // ─── 调试 ────────────────────────────────────────────────────────────────────
+  // 在窗口左上角显示当前动画状态文字，便于调试。生产环境建议关闭。
+  "show_status": false
+}

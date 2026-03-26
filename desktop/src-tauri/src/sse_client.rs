@@ -58,8 +58,8 @@ where
 
         let resp = match resp {
             Ok(r) => r,
-            Err(_e) => {
-                // Network failure; backoff and retry.
+            Err(e) => {
+                println!("[sse] connect error: {e}");
                 sleep(backoff).await;
                 backoff = (backoff * 2).min(cfg.max_backoff);
                 continue;
@@ -67,12 +67,13 @@ where
         };
 
         if !resp.status().is_success() {
-            // Auth/404/etc. Do not spam logs with sensitive details.
+            println!("[sse] bad status: {}", resp.status());
             sleep(backoff).await;
             backoff = (backoff * 2).min(cfg.max_backoff);
             continue;
         }
 
+        println!("[sse] connected to {}", cfg.url);
         // Successful connection resets backoff.
         backoff = Duration::from_millis(500);
 

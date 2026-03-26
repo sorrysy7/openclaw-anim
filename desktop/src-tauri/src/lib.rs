@@ -33,8 +33,13 @@ fn get_gateway_token() -> Option<String> {
     }
 
     // Fallback: ~/.openclaw/openclaw.json
-    let home = std::env::var("HOME").ok()?;
+    // Windows uses USERPROFILE; Unix uses HOME
+    // HOME works on macOS/Linux; USERPROFILE is the Windows equivalent
+    let home = std::env::var("HOME")
+        .or_else(|_| std::env::var("USERPROFILE"))
+        .ok()?;
     let path = format!("{}/.openclaw/openclaw.json", home);
+    println!("[token] trying config at: {path}");
     let text = std::fs::read_to_string(&path).ok()?;
     let json: serde_json::Value = serde_json::from_str(&text).ok()?;
     json.get("gateway")?
@@ -90,11 +95,19 @@ pub fn run() {
                 serde_json::json!({
                   "showStatus": show_status,
                   "initialSpine": initial_spine_animation,
+                  "spineAtlas": format!("/spine/{}", app_cfg.spine_atlas),
+                  "spineJson":  format!("/spine/{}", app_cfg.spine_json),
+                  "spineSkin":  app_cfg.spine_skin,
+                  "spineCamX":  app_cfg.spine_cam_x,
+                  "spineCamY":  app_cfg.spine_cam_y,
+                  "spineZoom":  app_cfg.spine_zoom,
                 }),
             );
 
             // Spawn background task: SSE → state machine → emit to UI
             let token = get_gateway_token().unwrap_or_default();
+            println!("[sse] token present: {}", !token.is_empty());
+            println!("[sse] url: {}", format!("http://127.0.0.1:{}/api/anim/events", app_cfg.gateway_port));
 
             // If token missing, we still run but will keep reconnecting; UI can show idle.
             let url = format!("http://127.0.0.1:{}/api/anim/events", app_cfg.gateway_port);

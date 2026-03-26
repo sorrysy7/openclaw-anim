@@ -32,6 +32,33 @@ pub struct AppConfig {
     #[serde(default = "default_show_status")]
     pub show_status: bool,
 
+    /// Spine camera X offset (world units). Default: 0.
+    #[serde(default)]
+    pub spine_cam_x: f64,
+
+    /// Spine camera Y offset (world units). Default: 0.
+    #[serde(default)]
+    pub spine_cam_y: f64,
+
+    /// Spine camera zoom (world units per canvas pixel). Default: auto (0 = auto-fit).
+    #[serde(default)]
+    pub spine_zoom: f64,
+
+    /// Path to the Spine atlas file, relative to the app's public/spine/ directory.
+    /// Default: "chibi-stickers.atlas"
+    #[serde(default = "default_spine_atlas")]
+    pub spine_atlas: String,
+
+    /// Path to the Spine skeleton JSON file, relative to the app's public/spine/ directory.
+    /// Default: "chibi-stickers.json"
+    #[serde(default = "default_spine_json")]
+    pub spine_json: String,
+
+    /// Spine skin name to activate. Required for multi-skin assets (e.g. chibi-stickers).
+    /// Run with show_status:true to see available skins in terminal logs.
+    #[serde(default)]
+    pub spine_skin: Option<String>,
+
     /// UI: initial Spine animation key. If omitted, we fall back to spine_animations["idle"].
     #[serde(default)]
     pub initial_spine_animation: Option<String>,
@@ -77,6 +104,12 @@ fn default_window_height() -> u32 {
 fn default_show_status() -> bool {
     false
 }
+fn default_spine_atlas() -> String {
+    "chibi-stickers.atlas".to_string()
+}
+fn default_spine_json() -> String {
+    "chibi-stickers.json".to_string()
+}
 
 impl Default for AppConfig {
     fn default() -> Self {
@@ -106,9 +139,15 @@ impl Default for AppConfig {
             window_width: default_window_width(),
             window_height: default_window_height(),
             show_status: default_show_status(),
+            spine_atlas: default_spine_atlas(),
+            spine_json: default_spine_json(),
+            spine_skin: None,
             initial_spine_animation: None,
             spine_animations,
             tool_action_overrides: std::collections::HashMap::new(),
+            spine_cam_x: 0.0,
+            spine_cam_y: 0.0,
+            spine_zoom: 0.0,
         }
     }
 }
@@ -132,12 +171,56 @@ pub fn load<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> AppConfig {
     // 2) app config dir
     if let Ok(dir) = app.path().app_config_dir() {
         let path = dir.join("config.json");
-        if let Ok(text) = std::fs::read_to_string(path) {
+        println!("[config] looking for config at: {}", path.display());
+        if let Ok(text) = std::fs::read_to_string(&path) {
+            println!("[config] loaded from: {}", path.display());
             if let Ok(cfg) = serde_json::from_str::<AppConfig>(&text) {
                 return cfg;
+            } else {
+                println!("[config] parse error, using defaults");
+            }
+        } else {
+            // First run: auto-generate a default config so the user has something to edit
+            println!("[config] not found, generating default config at: {}", path.display());
+            if let Err(e) = std::fs::create_dir_all(&dir) {
+                println!("[config] failed to create config dir: {e}");
+            } else if let Err(e) = std::fs::write(&path, DEFAULT_CONFIG_TEMPLATE) {
+                println!("[config] failed to write default config: {e}");
+            } else {
+                println!("[config] default config written — edit it and restart to apply");
             }
         }
     }
 
     AppConfig::default()
 }
+
+/// Default config written on first run.
+/// Users can edit this file to customize the app; restart to apply changes.
+const DEFAULT_CONFIG_TEMPLATE: &str = r#"{
+  "window_width": 200,
+  "window_height": 350,
+
+  "spine_atlas": "chibi-stickers.atlas",
+  "spine_json": "chibi-stickers.json",
+  "spine_skin": "spineboy",
+  "initial_spine_animation": "movement/idle-front",
+
+  "spine_animations": {
+    "idle":       "movement/idle-front",
+    "read":       "emotes/thinking",
+    "write":      "emotes/determined",
+    "exec":       "emotes/excited",
+    "web_search": "emotes/thinking",
+    "web_fetch":  "emotes/thinking",
+    "browser":    "emotes/thinking",
+    "reply":      "emotes/wave",
+    "error":      "emotes/scared"
+  },
+
+  "tool_action_overrides": {},
+
+  "gateway_port": 18789,
+  "show_status": false
+}
+"#;
