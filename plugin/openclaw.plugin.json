@@ -1,0 +1,9 @@
+{
+  "id": "openclaw-anim",
+  "name": "OpenClaw Anim",
+  "description": "Broadcasts tool call events via SSE for the animation desktop app. Emits only tool name and phase — no content, no secrets.",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false
+  }
+}

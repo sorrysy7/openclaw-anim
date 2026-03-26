@@ -1,0 +1,9 @@
+{
+  "name": "@local/openclaw-anim-plugin",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "OpenClaw plugin: broadcasts tool call events via SSE for animation desktop app",
+  "openclaw": {
+    "extensions": ["./index.ts"]
+  }
+}
